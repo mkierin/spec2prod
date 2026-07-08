@@ -35,6 +35,16 @@ cat .spec/tags.json 2>/dev/null || echo "NO MARKER"
 - **No marker** → ask the user for the app, then derive the slug from cwd
   (`pwd | sed 's#[/.]#-#g'`) and pick a time window, or list recent sessions:
   `ls -lt ~/.claude/projects/<slug>/*.jsonl | head`.
+- **Large / multi-folder project (20+ sessions over weeks)** → do NOT rely on one
+  slug + `started_at`; the sessions are scattered across folders (work often runs
+  from the home dir, not the project folder). Use the **session index** to select
+  by topic:
+  ```bash
+  python3 ~/.claude/skills/session-index/index-sessions.py --grep <project> --md
+  ```
+  Collect the matching session ids and pass them to the extractor as an explicit
+  `--sessions=id1,id2,...` allowlist (Step 2). This is the correct path for any
+  build that spanned more than a couple of sessions.
 
 ## Step 2 — Extract the digest
 
