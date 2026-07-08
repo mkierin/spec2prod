@@ -116,22 +116,51 @@ on-camera "watch a cold agent rebuild the app from its spec" demo, and as OSS.
 - Done-check: the skill, given a real capture marker, produces a `SPEC.md` with
   numbered phases and explicit slots — no raw transcript echoed.
 
-### Phase 5 — Register & smoke-test
-- Do: skills live in `{{HOME}}/.claude/skills/<name>/`; Claude Code exposes each as
-  `/<name>`. Verify `/spec-capture` and `/spec-distill` appear. Run the extractor
-  against a known session end-to-end.
-- Done-check: both skills invocable; extractor round-trips a real session.
+### Phase 5 — Session index (`/session-index`)
+- Files: `skills/session-index/index-sessions.py`, `skills/session-index/SKILL.md`
+- Do: scan every `~/.claude/projects/**/*.jsonl`, emit one row per session — id,
+  date span, cwd, branch, aiTitle, first real prompt, user_turns — **merged per
+  sessionId** across resume/sidechain fragments -> `~/.claude/session-index.jsonl`.
+  Query with `--grep` (over title+prompt+cwd), `--since`, `--branch`, `--md`,
+  `--no-build`. This is how a multi-folder project is found by TOPIC not folder.
+- Done-check: `--grep <known project>` returns its sessions across all cwds; total
+  distinct count << raw file count (fragments merged).
 
-## 5. Verify loop
+### Phase 6 — Git anchor (`git-anchor.py`)
+- Files: `skills/spec-distill/git-anchor.py`
+- Do: cross-reference a repo's git log against the session catalog. Emit a build
+  ledger (each commit attributed to the session active at its timestamp — the WHAT
+  paired with the WHY) and a final manifest (every tracked file + a per-file
+  outline of defs/classes/headers + line counts). The manifest is the golden anchor
+  §6 scores against.
+- Done-check: `--sessions=<id>` attributes commits to that session; manifest lists
+  every tracked file with an outline.
+
+## 5. Verify loop (scored)
 1. Build spec2prod from this spec in a clean directory.
-2. Diff against the original: two skill dirs, one extractor, `.spec/tags.json`
-   shape, the "raw jsonl never enters context" property, slug rule, `--slug=` form.
-3. For each gap, patch the phase or slot that caused it.
-4. Repeat until a cold agent reproduces the pair. The spec is DONE only when a
-   fresh session one-shots the clone. That cold run is also the YouTube demo shot.
+2. Diff against §6 Manifest: each listed file reproduced, with matching units
+   (defs/classes/headers)? Plus behavioral checks — `--slug=` form works, raw jsonl
+   never enters context, per-session fragment merge, `--grep` finds cross-folder
+   sessions, git attribution by timestamp.
+3. **Score = fraction of manifest files reproduced with a matching outline.** List
+   misses explicitly. Do not round up.
+4. Patch the phase/slot behind each gap; repeat until a cold agent reaches 100%.
+   That scored cold run is the YouTube demo shot ("watch it hit 100%").
+
+## 6. Manifest (golden anchor — from git-anchor.py)
+_regenerate with: `git-anchor.py --repo ~/spec2prod --sessions=<build ids>`_
+- `README.md` — outline: # spec2prod; ## Layout; ## Install; ## The proof
+- `SPEC.md` — this file (§0–§6 skeleton)
+- `skills/spec-capture/SKILL.md` — # Spec Capture; Steps 1–4 (marker writer)
+- `skills/spec-distill/SKILL.md` — # Spec Distill; Steps 0–6 (digest→anchor→SPEC→scored verify)
+- `skills/spec-distill/extract-sessions.py` — defs: parse_iso, user_text, assistant_summary, digest_session, render, main
+- `skills/spec-distill/git-anchor.py` — defs: git, load_sessions, attribute, read_commits, outline, main
+- `skills/session-index/SKILL.md` — # Session Index; Usage; How to answer common asks
+- `skills/session-index/index-sessions.py` — defs: first_prompt, scan_session, _merge, build, load, main
 
 ## Provenance
 Distilled from session `3ccf9985-e2f4-40f5-aca5-fe2795db69d1` · slug
-`-mnt-c-Users-dok` · Vibe2Prod build, 2026-07-08. Raw trail stays local at
-`~/.claude/projects/-mnt-c-Users-dok/`. This spec is the golden path; the raw
-session answers "why did it do X".
+`-mnt-c-Users-dok` · Vibe2Prod build, 2026-07-08. Git ledger: commits
+`ed64659..HEAD`. Raw trail stays local at `~/.claude/projects/-mnt-c-Users-dok/`.
+This spec is the golden path; the raw sessions answer "why did it do X", the
+commits answer "what shipped when".

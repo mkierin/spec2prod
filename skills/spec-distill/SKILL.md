@@ -58,8 +58,27 @@ python3 ~/.claude/skills/spec-distill/extract-sessions.py \
   --slug=<cwd_slug> --sessions=<id1>,<id2>
 ```
 
-Capture stdout. This is your source material. Skim it end to end before writing
-anything — you're reconstructing the golden path from the real trail.
+Capture stdout. This is your source material for WHY. Skim it end to end before
+writing anything.
+
+## Step 2.5 — Anchor to git (the WHAT)
+
+The digest is intent only. If the build is a git repo, ground it in the artifact —
+otherwise the spec will read plausibly and rebuild nothing. Run:
+
+```bash
+python3 ~/.claude/skills/spec-distill/git-anchor.py --repo <repo> \
+  --sessions=<same ids you distilled>     # or --grep <project> / --since <date>
+```
+
+This emits a **build ledger** (each commit = a verified phase boundary, attributed
+to the session that caused it) and a **final manifest** (the shipped file tree with
+a per-file outline of its defs/classes/headers + line counts). Capture stdout.
+
+Now you have both halves: the digest says *why*, the ledger+manifest say *what and
+when*. Distill phases from the COMMITS (real done-states), and pull the reason for
+each from the session digest. If the project isn't under git, say so — the spec is
+weaker (intent-only) and you should lean harder on the verify loop.
 
 ## Step 3 — Reconstruct the golden path
 
@@ -78,8 +97,11 @@ This is the core intelligence of the skill. Apply these rules:
    from a mockup; it does not replay 40 style edits.
 4. **Parameterize the surface.** Anything that's a user choice — data source, API
    keys, branding, copy, target host, port — becomes a `{{SLOT}}`, never baked in.
-5. **Order the survivors into phases.** Each phase = a goal + the files it touches
-   + a done-check (how a cold agent knows it worked, ideally against real data).
+5. **Order the survivors into phases — anchored to commits.** When you have a git
+   ledger, each commit IS a phase: its files are the phase's deliverable, its
+   subject is the goal, and "this commit exists and matches the manifest" is a real
+   done-check. Merge trivial fixup commits; split a giant commit only if the
+   session shows distinct sub-goals. Each phase = goal + files + done-check.
 6. **Scrub secrets.** Never carry a key/token value into the spec. Reference the
    slot (`{{GROQ_API_KEY}}`) and where the original pulled it from, not the value.
 
@@ -122,17 +144,24 @@ Do not skip verification. When done, run the Verify loop in §5.
 ### Phase 2 — ...
 ...
 
-## 5. Verify loop
+## 5. Verify loop (scored)
 1. Build from this spec in a clean directory.
-2. Diff the result against the original (structure, behavior, key outputs).
-3. For each gap, patch the phase or slot that caused it.
-4. Repeat until a cold run reproduces the app. The spec is DONE only when a fresh
-   agent one-shots the clone.
+2. Diff against §6 Manifest: for each listed file, did the cold build produce it,
+   with units (defs/classes/headers) matching by name/role? Run any test commands.
+3. **Score = fraction of manifest files reproduced with a matching outline.** List
+   per-file misses and failed tests explicitly. Do not round up.
+4. For each gap, patch the phase or slot that caused it. Repeat. The spec is DONE
+   only when a fresh agent reaches the target score (aim 100%; state the number).
+
+## 6. Manifest (golden anchor — paste from git-anchor.py output)
+<the final-manifest block: every shipped file + its outline + line count. This is
+what §5 scores against. If no git repo, hand-list the key files and their roles.>
 
 ## Provenance
 Distilled from sessions: <session ids> · slug <cwd_slug> · captured <started_at>.
-Raw trail stays local at ~/.claude/projects/<cwd_slug>/. This spec is the golden
-path; the raw sessions answer "why did it do X".
+Git ledger: <N commits, first..last hash>. Raw trail stays local at
+~/.claude/projects/<cwd_slug>/. This spec is the golden path; the raw sessions
+answer "why did it do X", the commits answer "what shipped when".
 ```
 
 Keep phases tight and executable. If the build was large, it's better to have 8
@@ -147,10 +176,13 @@ Ask the user: run a cold-build verification now? If yes:
    contents of `SPEC.md` and nothing else — no hints from this conversation. It
    must build only from the spec.
 3. Diff its output against the original. Record gaps.
-4. Patch `SPEC.md` for each gap (missing decision, ambiguous phase, unmarked
-   slot). Note what you changed.
-5. Report: did a cold agent reproduce it? What was missing? This is the honest
-   proof — and the exact footage the YouTube demo needs.
+4. Score the rebuild against §6 Manifest (fraction of files reproduced with a
+   matching outline; run any test commands). Report the number, not a vibe.
+5. Patch `SPEC.md` for each gap (missing decision, ambiguous phase, unmarked slot).
+   Note what you changed, then re-run until the score is satisfactory.
+6. Report: cold-build score (e.g. "8/8 files, 2/2 tests"), what was missing before
+   patching. This is the honest proof — and the exact footage the YouTube demo
+   needs ("watch it hit 100%").
 
 Do NOT claim the spec works without this loop, or say plainly that it's unverified.
 
