@@ -6,7 +6,7 @@ Most people build an app with an AI coding agent, ship the code, and discard the
 prompts. But the prompts — the decisions, the intent, the reasons — are what
 actually generated the result. spec2prod treats them as the real artifact.
 
-Two Claude Code skills:
+Two core Claude Code skills, plus a helper:
 
 - **`/spec-capture`** — run once at the start of a build. Drops a boundary marker
   (`.spec/tags.json`) recording which working directory and moment the build began.
@@ -21,6 +21,13 @@ Two Claude Code skills:
   diff against the original, patch the spec. The spec is done only when a fresh
   agent reproduces the app from nothing but the spec.
 
+- **session-index** (`skills/session-index/`) — a helper for `/spec-distill` on
+  large, multi-session builds. Claude Code sessions are stored per working
+  directory, so a project spanning weeks can scatter across several folders.
+  This catalogs every session by topic (`~/.claude/session-index.jsonl`) so
+  `/spec-distill` can select the right sessions by grepping topic/prompt/cwd
+  instead of relying on one folder's time window.
+
 Design/branding enters as an image-inferred slot, not replayed CSS. Provenance
 (the raw sessions) stays linked as the audit trail — the clean spec answers
 "what to build", the sessions answer "why it did X".
@@ -31,13 +38,17 @@ Design/branding enters as an image-inferred slot, not replayed CSS. Provenance
 skills/spec-capture/SKILL.md
 skills/spec-distill/SKILL.md
 skills/spec-distill/extract-sessions.py   # stdlib-only digest extractor
+skills/spec-distill/git-anchor.py         # grounds the spec in the built artifact, not just intent
+skills/session-index/SKILL.md
+skills/session-index/index-sessions.py    # stdlib-only session catalog builder
 SPEC.md                                    # the recursive first spec: spec2prod's own spec
 ```
 
 ## Install
 
 Copy the skill dirs into `~/.claude/skills/`. Claude Code exposes each as a slash
-command: `/spec-capture`, `/spec-distill`.
+command: `/spec-capture`, `/spec-distill`. `session-index` is a plain script,
+invoked directly (see `skills/session-index/SKILL.md`).
 
 ## The proof
 
@@ -47,4 +58,5 @@ other context — which rebuilt the whole tool from the spec alone. The tool's f
 clone is the tool.
 
 ---
-Part of the Vibe2Prod project. MIT, Kierin Dougoud.
+Part of the Vibe2Prod project. Free, MIT licensed (see [LICENSE](LICENSE)) —
+Kierin Dougoud.
