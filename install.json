@@ -1,0 +1,19 @@
+{
+  "id": "spec2prod",
+  "name": "spec2prod",
+  "description": "Turn a build session into a runnable SPEC.md a cold agent can one-shot. /spec-capture + /spec-distill + session-index skills (stdlib-only Python).",
+  "skills": [
+    {
+      "src": "skills/spec-capture",
+      "dest": "~/.claude/skills/spec-capture"
+    },
+    {
+      "src": "skills/spec-distill",
+      "dest": "~/.claude/skills/spec-distill"
+    },
+    {
+      "src": "skills/session-index",
+      "dest": "~/.claude/skills/session-index"
+    }
+  ]
+}
