@@ -8,10 +8,14 @@ actually generated the result. spec2prod treats them as the real artifact.
 
 Two core Claude Code skills, plus a helper:
 
-- **`/spec-capture`** — run once at the start of a build. Drops a boundary marker
-  (`.spec/tags.json`) recording which working directory and moment the build began.
-  It does **not** log your prompts — Claude Code already persists every session to
-  `~/.claude/projects/<cwd-slug>/*.jsonl`. Capture just marks the boundary. Free.
+- **`/spec-capture`** — drops a boundary marker (`.spec/tags.json`) recording which
+  working directory and moment the build began. It does **not** log your prompts —
+  Claude Code already persists every session to `~/.claude/projects/<cwd-slug>/*.jsonl`.
+  Capture just marks the boundary. Free.
+  **You do not normally run this yourself.** Since capture is only a marker, it is
+  cheap enough to arm automatically: the `auto-arm` hook drops the marker on the
+  first real code edit in any git project (see *Automatic capture* below). Run the
+  skill by hand only to re-arm a build or set an explicit intent.
 
 - **`/spec-distill`** — run at the end (or any checkpoint). Reads the marker,
   extracts a clean **golden-path digest** from the raw sessions (dropping
@@ -43,6 +47,52 @@ skills/session-index/SKILL.md
 skills/session-index/index-sessions.py    # stdlib-only session catalog builder
 SPEC.md                                    # the recursive first spec: spec2prod's own spec
 ```
+
+## Automatic capture (why you never have to remember it)
+
+The first version of this tool was opt-in, and it was not used once after it was
+built. The reason is structural, not lazy: `/spec-capture` had to be invoked at the
+exact moment you start building — the moment you are thinking about the build and
+not about tooling. Tooling loses that competition every time, and a build that was
+never armed cannot be distilled afterwards. An opt-in capture tool is a capture tool
+that is off.
+
+So both halves are now automatic:
+
+- **`skills/spec-capture/auto-arm.py`** — a `PostToolUse` hook on `Edit|Write`. On the
+  first edit to a *code* file inside a *git repo*, it writes `.spec/tags.json` and says
+  so once. It skips docs-only edits, non-repo files, `~/.claude`, `/tmp`, scratch dirs,
+  `node_modules`, and the bare home directory. Already armed → silent. Any error → fails
+  open (a capture marker is never worth breaking an edit over). Intent stays a
+  placeholder, because `/spec-distill` infers real intent from the sessions anyway.
+
+- **`skills/spec-distill/nudge.py`** — a `Stop` hook. When an armed project has ≥3
+  captured sessions and still has no `SPEC.md`, it suggests `/spec-distill` — once,
+  with a 3-day cooldown per project, and never again after the spec exists. Distillation
+  is *offered at the moment it becomes worth doing*, rather than remembered days later
+  once the context that made it valuable is gone.
+
+Wire them up in `~/.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      { "matcher": "Edit|Write",
+        "hooks": [{ "type": "command",
+                    "command": "python3 '<path>/spec2prod/skills/spec-capture/auto-arm.py'" }] }
+    ],
+    "Stop": [
+      { "hooks": [{ "type": "command",
+                    "command": "python3 '<path>/spec2prod/skills/spec-distill/nudge.py'" }] }
+    ]
+  }
+}
+```
+
+Design rule, learned the hard way: **capture must be ambient (on by default, no
+decision), and distillation must be offered (the tool notices), never remembered.**
+Adoption is the acceptance test — a tool you built and abandoned is a failed tool.
 
 ## Install
 
