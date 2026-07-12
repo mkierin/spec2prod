@@ -1,7 +1,7 @@
 # /spec — the forward half of spec2prod
 
 ```
-status: SPEC v0.1 (2026-07-11) — design locked, not yet implemented
+status: v0 implemented 2026-07-12 (triage + interview + adaptive tree + EARS + orchestration handoff — SKILL.md); notice-hook + drift write-back pending (v0.1)
 author: Kierin Dougoud
 completes: spec2prod. /spec = specify BEFORE you build (forward).
            /spec-capture + /spec-distill = recover the spec FROM what you built (backward).

@@ -6,7 +6,16 @@ Most people build an app with an AI coding agent, ship the code, and discard the
 prompts. But the prompts — the decisions, the intent, the reasons — are what
 actually generated the result. spec2prod treats them as the real artifact.
 
-Two core Claude Code skills, plus a helper:
+Three Claude Code skills, plus a helper:
+
+- **`/spec`** — the forward half: specify BEFORE you build. Triages how much
+  ceremony the work deserves (a one-line fix gets none; an app gets a full tree),
+  interviews you until nothing important is left for the model to guess, and writes
+  a modular `.spec/tree/` — archetype-selected branches, each capped at 200 lines,
+  each ending in testable `WHEN … THE SYSTEM SHALL …` acceptance criteria, plus a
+  `99-orchestration.md` task graph with `[P]` parallel markers for agent swarms.
+  v0: run it manually at project start; the notice-hook and drift write-back are
+  designed (see `skills/spec/SPEC.md`) and land in v0.1.
 
 - **`/spec-capture`** — drops a boundary marker (`.spec/tags.json`) recording which
   working directory and moment the build began. It does **not** log your prompts —
@@ -39,6 +48,8 @@ Design/branding enters as an image-inferred slot, not replayed CSS. Provenance
 ## Layout
 
 ```
+skills/spec/SKILL.md                       # /spec — triage, interview, adaptive tree (forward half)
+skills/spec/SPEC.md                        # its own design doc (dogfood)
 skills/spec-capture/SKILL.md
 skills/spec-distill/SKILL.md
 skills/spec-distill/extract-sessions.py   # stdlib-only digest extractor
@@ -97,7 +108,7 @@ Adoption is the acceptance test — a tool you built and abandoned is a failed t
 ## Install
 
 Copy the skill dirs into `~/.claude/skills/`. Claude Code exposes each as a slash
-command: `/spec-capture`, `/spec-distill`. `session-index` is a plain script,
+command: `/spec`, `/spec-capture`, `/spec-distill`. `session-index` is a plain script,
 invoked directly (see `skills/session-index/SKILL.md`).
 
 ## The proof

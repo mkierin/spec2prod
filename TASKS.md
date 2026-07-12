@@ -14,7 +14,7 @@
 - [x] 2026-07-11: Distill nudge — `skills/spec-distill/nudge.py`, a Stop hook. Fires when an armed project has ≥3 captured sessions and no `SPEC.md`; one nudge per project per 3 days; stops permanently once the spec exists. Verified: silent below threshold ✓, fires at threshold ✓, cooldown holds ✓, stops after SPEC.md ✓.
 - [x] 2026-07-11: README documents the adoption failure, the design rule, and the hook wiring.
 
-## /spec — the forward half (SPEC written 2026-07-11, not yet implemented)
+## /spec — the forward half (v0 SHIPPED 2026-07-12)
 
 Design locked at `skills/spec/SPEC.md`. Completes spec2prod: **/spec = specify BEFORE you build (forward)** · **/spec-capture + /spec-distill = recover the spec FROM what you built (backward)**.
 
@@ -27,7 +27,8 @@ Five differentiators, each aimed at a hole the field has not filled (researched 
 
 Anti-bloat is mechanical, not aspirational: 200-line hard cap per spec file, archetype-selected branches (a CLI tool never gets a "UI and feel" spec), EARS-form acceptance criteria that feed the real gates.
 
-- [ ] 2026-07-11 Implement `/spec` per `skills/spec/SPEC.md` (trigger hook → triage → interview → adaptive tree → orchestration handoff)
+- [x] 2026-07-12: /spec v0 shipped — `skills/spec/SKILL.md`: triage ladder (T0-T3, bias low), reason-first interview with ASSUMED: markers + --fast/--deep, archetype-selected tree (200-line cap), EARS acceptance criteria, 99-orchestration.md handoff with [P] markers. Installed to ~/.claude/skills/spec/. NOT in v0: notice hook + drift write-back.
+- [ ] 2026-07-12 v0.1: notice hook (`it notices` — PostToolUse advisory line on young repos, records declines) + drift write-back (`DISCOVERED:` notes, Stop-hook drift gate) per SPEC.md §1/§7
 - [ ] 2026-07-11 Implement the drift gate + `DISCOVERED:` write-back (§7) — advisory first, promote to automatic once false-positive rate is known
 - [ ] 2026-07-11 Tune the young-repo thresholds (12 files / 5 commits are guesses) against real repos before trusting them
 
